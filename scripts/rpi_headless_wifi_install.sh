@@ -15,8 +15,8 @@ check_os_version () {
     if [ -f /etc/os-release ]; then
         _version=$(grep -oP 'VERSION="\K[^"]+' /etc/os-release)
     fi
-    if [ "$_version" != "11 (bullseye)" ]; then
-        echo "ERROR: Distribution not based on Raspbian 11 (bullyeye)."
+    if [ "$_version" != "11 (bullseye)" ] && [ "$_version" != "12 (bookworm)" ]; then
+        echo "ERROR: Distribution not based on Raspbian 11 (bullyeye) nor 12 (Bookworm)."
         exit 1
     fi
 }
@@ -80,8 +80,10 @@ cd $TOPDIR
 # Installing pip3 and venv..  Raspberry lite does not have them
 echo "Installing python3-pip ... pip3 required"
 apt-get install -y python3-pip
-echo "Installing python3-venv ... vend required" 
+echo "Installing python3-venv ... venv required" 
 apt-get install -y python3-venv
+echo "Installing dependencies for dbus-python..."
+apt install build-essential libdbus-glib-1-dev libgirepository1.0-dev
 
 # Check if python3 and pip installed correctly
 echo "Checking that python3 and pip are installed..."
@@ -110,7 +112,7 @@ if [[ "$OSTYPE" == "linux"* ]]; then
 
     # Install the python modules our app uses into our venv
     echo "Installing python modules..."
-    pip3 install -r $TOPDIR/config/requirements.txt
+    pip3 install $TOPDIR/deps/NetworkManager
 
     # Deactivate the venv
     deactivate
@@ -135,7 +137,7 @@ if [[ $? == 1 ]]; then
     # create the string
     String='@reboot sleep 15 && '
     String+=$TOPDIR
-    String+='/scripts/run.sh'
+    String+='/scripts/run.sh >> /var/log/wifi-connect-headless-rpi.log 2>&1'
 
     # print the line
     echo $String
